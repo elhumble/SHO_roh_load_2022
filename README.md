@@ -7,34 +7,34 @@ This repository contains the scripts used for downstream analyses of population 
 **Code structure**
 -------------
 
-*Pre-processing*  
-**0.0_chrom_map.R:** Creates a chrom map file for use with PLINK  
-**0.1_vcf_cov.R:** Explores SNP coverage in vcf file  
-
 *Relatedness and population structure*  
-**1.0_IBD.R:** Relatedness analysis  
-**1.1_ngsadmix_out.R:** NGSadmix analysis and visualisation  
-**1.2_pcangsd_out.R:** PCAnsgd analysis and visualisation  
+**1.0_IBD.R:**  
+**1.1_ngsadmix_out.R:**  
+**1.2_pcangsd_out.R:**  
 
 *ROH analysis*  
-**2.0_ROH_plink.R:** ROH analysis of PLINK output  
-**2.1_ROH_bcftools.R:** ROH analysis of PLINK output  
-**2.2_ROH_plink_supp:** ROH analysis of PLINK output for supplementary  
+**2.0_ROH_plink.R:**  
+**2.1_ROH_bcftools.R:**  
+**2.2_ROH_plink_supp:**  
 
 *Outgroup depth*  
-**3.0_outgroup_depth.R:** Depth of coverage of outgroup alignments for polarisation  
+**3.0_outgroup_depth.R:**  
 
 *Mutation load analysis*  
-**4.0_load_snpeff.R:** Mutation load analysis using SNPeff annotations  
-**4.1_load_vep.R:** Mutation load analysis using VEP annotations  
-**4.2_load_snpeff_supp.R:** Mutation load analysis using SNPeff annotations for supplementary  
+**4.0_load_snpeff.R:**  
+**4.1_load_vep.R:**  
+**4.2_load_snpeff_supp.R:**  
 
-*Ne*  
-**5.0_gone.R:** Visualisation of GONe Ne estimates  
+*Ne and fixed loci*  
+**5.0_gone.R:**  
+**6.0_fixed.R:**  
 
-*Fixed loci and coverage*  
-**6.0_fixed.R:** Assessment of fixed deleterious loci  
-**6.1_coverage.R:** Relationship between inbreeding and depth of coverage  
+*Coverage assessment*  
+**0.1_vcf_cov.R:**  
+**6.1_coverage.R:**  
+
+*File creation*  
+**0.0_chrom_map.R:**  
 
 **Data**
 -------------
