@@ -7,7 +7,7 @@
 /figs
 /old_scripts
 /workflows
-0.0_bam_cov.R
+0.0_bam.cov.R
 0.0_metadata.R
 4.3_load_landscape_snpeff.R
 999_neestimator.R
