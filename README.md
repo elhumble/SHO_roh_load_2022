@@ -17,9 +17,6 @@ This repository contains the scripts used for downstream analyses of population 
 **2.1_ROH_bcftools.R:**  
 **2.2_ROH_plink_supp:**  
 
-*Outgroup depth*  
-**3.0_outgroup_depth.R:**  
-
 *Mutation load analysis*  
 **4.0_load_snpeff.R:**  
 **4.1_load_vep.R:**  
@@ -31,6 +28,7 @@ This repository contains the scripts used for downstream analyses of population 
 
 *Coverage assessment*  
 **0.1_vcf_cov.R:**  
+**3.0_outgroup_depth.R:**  
 **6.1_coverage.R:**  
 
 *File creation*  
