@@ -1,8 +1,8 @@
-**Chromosomal-level genome assembly of the scimitar-horned oryx: insights into diversity and demography of a species extinct in the wild**
+**Conservation management strategy impacts inbreeding and mutation load in scimitar-horned oryx**
 
 **Summary**
 -------------
-This repository contains the scripts used for downstream analyses of NGDadmix, PCAngsd, ROH and deleterious mutations. Please see github repository [SHO_reseq_2022](https://github.com/elhumble/SHO_reseq_2022) for prior steps including alignment, SNP calling and variant annotation.
+This repository contains the scripts used for downstream analyses of population structure, ROH and deleterious mutations. Please see github repository [SHO_reseq_2022](https://github.com/elhumble/SHO_reseq_2022) for prior steps including alignment, SNP calling and variant annotation.
 
 **Code structure**
 -------------
