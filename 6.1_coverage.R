@@ -132,5 +132,5 @@ seqdepth_froh <- ggplot(df, aes(meandepth, FROH, col = Origin)) +
 
 seqdepth_froh
 
-ggsave("figs/Figure_S1.png", seqdepth_froh, height = 4, width = 6)
+ggsave("figs/froh_depth.png", seqdepth_froh, height = 4, width = 6)
  

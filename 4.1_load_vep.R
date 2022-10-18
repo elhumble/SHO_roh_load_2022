@@ -586,7 +586,7 @@ rxy_fig <- rxy + plot_spacer() + plot_layout(widths = c(1.6,1))
 het_load_fig + hom_load_fig + rxy_fig + plot_layout(guides = "collect", nrow = 3,
                                                     heights = c(1.6,1.6, 0.8))
 
-ggsave("figs/Figure_S8.png", het_load_fig + hom_load_fig + rxy_fig + 
+ggsave("figs/load_VEP.png", het_load_fig + hom_load_fig + rxy_fig + 
          plot_layout(guides = "collect", nrow = 3,
                      heights = c(1.6,1.6, 1)),
        height = 8, width = 7)

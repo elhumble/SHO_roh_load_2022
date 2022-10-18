@@ -265,7 +265,7 @@ het_load_fig
 het_load_fig + hom_load_fig + plot_layout(guides = "collect", nrow = 2,
                                                       heights = c(1.6,1.6))
 
-ggsave("figs/Figure_S13.png", het_load_fig + hom_load_fig + 
+ggsave("figs/load_USA_split.png", het_load_fig + hom_load_fig + 
          plot_layout(guides = "collect", nrow = 2,
                      heights = c(1.6,1.6)),
        height = 8, width = 7)

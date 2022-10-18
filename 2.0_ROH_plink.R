@@ -269,7 +269,7 @@ froh_dist <- ggplot(froh, aes(FROH)) +
 
 froh_dist
 
-ggsave("figs/fROH_dist.png", froh_dist, width = 4, height = 3)
+ggsave("figs/froh_dist.png", froh_dist, width = 4, height = 3)
 
 #~~ Average FROH across individuals
 

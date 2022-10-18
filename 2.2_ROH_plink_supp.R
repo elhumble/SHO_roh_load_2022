@@ -412,7 +412,7 @@ bb <- (recent_demog + theme(legend.position = "none")) +
 aa / bb + plot_layout(guides = "collect") + plot_annotation(tag_levels = "A")
 
 
-ggsave("figs/Figure_S10.png", aa / bb + plot_layout(guides = "collect") + 
+ggsave("figs/ROH_Ranch_SSP.png", aa / bb + plot_layout(guides = "collect") + 
          plot_annotation(tag_levels = "A"), height = 6, width = 9)
 
 

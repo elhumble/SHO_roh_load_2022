@@ -638,7 +638,7 @@ bb <- (recent_demog + theme(legend.position = "none")) +
 aa / bb + plot_layout(guides = "collect") + plot_annotation(tag_levels = "A")
 
 
-ggsave("figs/Figure_1_BCFtools.png", aa / bb + plot_layout(guides = "collect") + 
+ggsave("figs/ROH_BCFtools.png", aa / bb + plot_layout(guides = "collect") + 
          plot_annotation(tag_levels = "A"), height = 6, width = 9)
 
 

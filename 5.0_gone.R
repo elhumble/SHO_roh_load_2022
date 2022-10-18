@@ -44,5 +44,5 @@ gone_ne_plot <-ggplot(gone_ne, aes(Generation, Geometric_mean, col = Origin)) +
 
 gone_ne_plot
 
-ggsave("figs/Figure_S11.png", gone_ne_plot, height = 4, width = 6)
+ggsave("figs/GONe.png", gone_ne_plot, height = 4, width = 6)
 
