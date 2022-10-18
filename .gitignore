@@ -1,0 +1,15 @@
+.DS_Store
+.Rapp.history
+.Rhistory
+.Rproj.user/
+/data
+/docs
+/figs
+/old_scripts
+/workflows
+0.0_bam_cov.R
+0.0_metadata.R
+4.4_load_landscape_snpeff.R
+999_neestimator.R
+999_ngsld.R
+SHO_roh_load_2022.Rproj
