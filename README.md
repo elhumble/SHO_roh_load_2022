@@ -2,7 +2,7 @@
 
 **Summary**
 -------------
-This repository contains the scripts used for downstream analyses of population structure, ROH and deleterious mutations. Please see github repository [SHO_reseq_2022](https://github.com/elhumble/SHO_reseq_2022) for prior steps including alignment, SNP calling and variant annotation.
+This repository contains the scripts used for analysis of population structure, ROH and deleterious mutations. Please see github repository [SHO_reseq_2022](https://github.com/elhumble/SHO_reseq_2022) for prior steps including alignment, SNP calling and variant annotation.
 
 **Code structure**
 -------------
@@ -31,7 +31,7 @@ This repository contains the scripts used for downstream analyses of population 
 `3.0_outgroup_depth.R`  
 `6.1_coverage.R`  
 
-*File creation*  
+*File creation for PLINK*  
 `0.0_chrom_map.R`  
 
 **Data**
