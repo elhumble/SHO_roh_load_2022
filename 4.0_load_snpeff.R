@@ -1,6 +1,6 @@
 # Genetic load plotting and analysis (SNPeff)
 
-source("scripts/theme_emily.R")
+source("theme_emily.R")
 library(dplyr)
 library(data.table)
 library(readxl)
@@ -237,17 +237,17 @@ ggplot(het_load, aes(reorder_within(Origin, total_het, snp_class),
 
 #~~ Models
 
-fit_lof_mask <- lm(total_het ~ manage, data = het_load %>% filter(snp_class == "LoF"))
-tidy(fit_lof_mask, conf.int = TRUE)
-check_model(fit_lof_mask)
-plot_model(fit_lof_mask)
-summary.lm(fit_lof_mask)
+fit_lof_het <- lm(total_het ~ manage, data = het_load %>% filter(snp_class == "LoF"))
+tidy(fit_lof_het, conf.int = TRUE)
+check_model(fit_lof_het)
+plot_model(fit_lof_het)
+summary.lm(fit_lof_het)
 
-fit_missense_mask <- lm(total_het ~ manage, data = het %>% filter(snp_class == "Missense"))
-tidy(fit_missense_mask, conf.int = TRUE)
-check_model(fit_missense_mask)
-plot_model(fit_missense_mask)
-summary.lm(fit_missense_mask)
+fit_missense_het <- lm(total_het ~ manage, data = het_load %>% filter(snp_class == "Missense"))
+tidy(fit_missense_het, conf.int = TRUE)
+check_model(fit_missense_het)
+plot_model(fit_missense_het)
+summary.lm(fit_missense_het)
 
 
 #~~ Correlation with inbreeding
@@ -444,9 +444,9 @@ rxy_missense <- as.matrix(lab_missense / lba_missense) %>%
 
 subsample <- function(iter, frac) {
   
-  snps_lof <- sample(1:nrow(rxy_lof_ab_mat), round(frac * nrow(rxy_lof_ab_mat), 0), replace=FALSE)
-  snps_intergenic <- sample(1:nrow(rxy_intergenic_ab_mat), round(frac * nrow(rxy_intergenic_ab_mat), 0), replace=FALSE)
-  snps_missense <- sample(1:nrow(rxy_missense_ab_mat), round(frac * nrow(rxy_missense_ab_mat), 0), replace=FALSE)           
+  snps_lof <- sample(1:nrow(rxy_lof_ab_mat), round(frac * nrow(rxy_lof_ab_mat), 0), replace=TRUE)
+  snps_intergenic <- sample(1:nrow(rxy_intergenic_ab_mat), round(frac * nrow(rxy_intergenic_ab_mat), 0), replace=TRUE)
+  snps_missense <- sample(1:nrow(rxy_missense_ab_mat), round(frac * nrow(rxy_missense_ab_mat), 0), replace=TRUE)           
   
   # don't subsample intergenic snps [snps_intergenic, ]
   lab_lof_sub <- colSums(rxy_lof_ab_mat[snps_lof, ]) / colSums(rxy_intergenic_ab_mat)
@@ -467,7 +467,7 @@ subsample <- function(iter, frac) {
   
 }
 
-rxy_samples <- map(1:100, subsample, 0.7)
+rxy_samples <- map(1:100, subsample, 1)
 
 
 #~~ Plot
