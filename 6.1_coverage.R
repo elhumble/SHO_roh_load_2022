@@ -4,7 +4,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(wesanderson)
-source("scripts/theme_emily.R")
+source("theme_emily.R")
 
 # Sequencing depth ~ inbreeding
 # samtools coverage files transferred from datastore onto local
