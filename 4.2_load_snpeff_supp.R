@@ -1,6 +1,6 @@
 # Genetic load plotting
 
-source("scripts/theme_emily.R")
+source("theme_emily.R")
 library(dplyr)
 library(data.table)
 library(readxl)
@@ -42,19 +42,19 @@ files <- dir(data_path, pattern = "*\\.traw")
 
 # Number of 0,1,2 genotypes per individual across SNP classes
 
-df <- tibble(filename = files) %>%
+df <- tibble(filename = files[2:5]) %>%
   mutate(file_contents = map(filename,
                              ~ fread(file.path(data_path, .)))) %>%
   unnest(cols = c(file_contents)) %>%
   select(-c(CHR, `(C)M`, POS, COUNTED, ALT)) %>%
   pivot_longer(cols = -c(filename, SNP)) %>%
-  mutate(name = gsub("_.+", "", name)) %>%
+  mutate(name = gsub("0_", "", name)) %>%
   left_join(meta, by = c("name" = "Sample_ID")) %>%
   dplyr::count(name, filename, WGS_run, Origin, manage, value) %>% # count unique values of one or more vars
   group_by(name, filename) %>%
   mutate(n = as.numeric(n)) %>%
   filter(!is.na(value)) %>%
-  filter(name != "MSH682" & name != "MSH238" & name != "MSH250")
+  filter(name != "MSH682" & name != "MSH238" & name != "MSH250") # related and admixed
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #        Load ROH data        #
@@ -87,7 +87,7 @@ roh <- roh_all %>%
 
 hom_load <- df %>%
   group_by(filename, name, WGS_run, Origin, manage) %>%
-  mutate(total_alt_hom = case_when(value == 2 ~ n, 
+  mutate(total_alt_hom = case_when(value == 0 ~ n, 
                                    TRUE ~ 0)) %>%
   summarise(total_geno = sum(n),
             total_alt_hom = sum(total_alt_hom)) %>%
@@ -100,6 +100,7 @@ hom_load <- df %>%
   mutate(WGS_run = case_when(WGS_run == 1 ~ "high_cov",
                              TRUE ~ "low_cov")) %>%
   left_join(roh, by = c("name" = "iid")) %>% 
+  #left_join(ml, by = c("name" = "ID")) %>%
   # dplyr::slice(3) %>% # alt hom == 2
   mutate(WGS_run = as.factor(WGS_run)) %>% 
   mutate(snp_class = str_split(filename, "_")) %>% 
@@ -113,7 +114,8 @@ hom_load <- df %>%
                                snp_class == "missense" ~ "Missense",
                                snp_class == "synonymous" ~ "Synonymous",
                                snp_class == "intergenic" ~ "Intergenic")) %>%
-  mutate(Origin = factor(Origin, levels = c("EEP", "USA (SSP)", "USA (Ranch)", "EAD A", "EAD B")))
+  mutate(Origin = factor(Origin, levels = c("EEP", "USA (SSP)", "USA (Ranch)",
+                                            "EAD A", "EAD B")))
 
 
 # Figure
@@ -124,10 +126,10 @@ col_palette <- c(wes_palette("Cavalcanti1")[2],
                  wes_palette("Cavalcanti1")[1],
                  wes_palette("GrandBudapest1")[4])
 
-# Absolute number of hom alternative genotypes for each SNP class i.e. drift load
+# Absolute number of hom alternative genotypes for each SNP class
 
 ggplot(hom_load, aes(reorder_within(Origin, total_alt_hom, snp_class), 
-                                 total_alt_hom, fill = Origin)) +
+                     total_alt_hom, fill = Origin)) +
   geom_half_point(side = "l", shape = 21, alpha = 0.5, stroke = 0.1, size =4,
                   transformation_params = list(height = 0, width = 1.3, seed = 1)) +
   geom_half_boxplot(side = "r", outlier.color = NA,
@@ -139,7 +141,8 @@ ggplot(hom_load, aes(reorder_within(Origin, total_alt_hom, snp_class),
   scale_x_reordered() +
   facet_wrap( ~ snp_class, scales = "free") +
   # ggtitle("Number of homozygote genotypes in each SNP class") +
-  xlab("Population") + ylab("Number of alterantive homozgyotes")
+  xlab("Population") + ylab("Number of homozgyote genotypes")
+
 
 #~~ Correlation with inbreeding
 
@@ -162,10 +165,13 @@ het_load <- df %>%
   # filter(!grepl("intergenic", filename)) %>%
   group_by(filename, name, WGS_run, Origin, manage) %>%
   mutate(total_het = case_when(value == 1 ~ n,
-                                  TRUE ~ 0)) %>%
+                               TRUE ~ 0)) %>%
   summarise(total_het = sum(total_het)) %>%
   mutate(WGS_run = case_when(WGS_run == 1 ~ "high_cov",
                              TRUE ~ "low_cov")) %>%
+  #left_join(roh, by = c("name" = "iid")) %>% 
+  #left_join(ml, by = c("name" = "ID")) %>%
+  # dplyr::slice(3) %>% # alt hom == 2
   mutate(WGS_run = as.factor(WGS_run)) %>% 
   mutate(snp_class = str_split(filename, "_")) %>% 
   unnest(cols = snp_class) %>% 
@@ -178,13 +184,14 @@ het_load <- df %>%
                                snp_class == "missense" ~ "Missense",
                                snp_class == "synonymous" ~ "Synonymous",
                                snp_class == "intergenic" ~ "Intergenic")) %>%
-  mutate(Origin = factor(Origin, levels = c("EEP", "USA (SSP)", "USA (Ranch)", "EAD A", "EAD B"))) %>%
+  mutate(Origin = factor(Origin, levels = c("EEP", "USA (SSP)", "USA (Ranch)",
+                                            "EAD A", "EAD B"))) %>%
   mutate(snp_class = factor(snp_class, levels = c("LoF", "Missense", "Synonymous", "Intergenic")))
 
 # Figure
 
 ggplot(het_load, aes(reorder_within(Origin, total_het, snp_class), 
-                            total_het, fill = Origin)) +
+                     total_het, fill = Origin)) +
   geom_half_point(side = "l", shape = 21, alpha = 0.5, stroke = 0.1, size =4,
                   transformation_params = list(height = 0, width = 1.3, seed = 1)) +
   geom_half_boxplot(side = "r", outlier.color = NA,
@@ -195,6 +202,53 @@ ggplot(het_load, aes(reorder_within(Origin, total_het, snp_class),
   facet_wrap(~ snp_class, scales = "free") +
   theme(legend.position="none") +
   xlab("Population") + ylab("Number of heterozygotes") +
+  scale_fill_manual(values = col_palette, name = "Population")
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#     Mutation load : Number of alternative deleterious alleles      #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+genotyped <- df %>%
+  group_by(name, Origin) %>%
+  summarise(n = sum(n))
+
+mutation_load <- df %>%
+  # filter(!grepl("intergenic", filename)) %>%
+  group_by(filename, name, WGS_run, Origin, manage) %>%
+  mutate(total_alt = case_when(value == 0 ~ n*2,
+                               value == 1 ~ n,
+                               value == 2 ~ 0)) %>%
+  summarise(total_alt = sum(total_alt)) %>%
+  mutate(snp_class = str_split(filename, "_")) %>% 
+  unnest(cols = snp_class) %>% 
+  filter(snp_class %in% c("lof", "missense", "synonymous", "intergenic")) %>%
+  mutate(snp_class = factor(snp_class, levels = c("missense",
+                                                  "lof",
+                                                  "synonymous",
+                                                  "intergenic"))) %>%
+  mutate(snp_class = case_when(snp_class == "lof" ~ "LoF",
+                               snp_class == "missense" ~ "Missense",
+                               snp_class == "synonymous" ~ "Synonymous",
+                               snp_class == "intergenic" ~ "Intergenic")) %>%
+  mutate(Origin = factor(Origin, levels = c("EEP", "USA (SSP)", "USA (Ranch)",
+                                            "EAD A", "EAD B"))) %>%
+  mutate(snp_class = factor(snp_class, levels = c("LoF", "Missense", "Synonymous", "Intergenic"))) %>%
+  left_join(genotyped, by = c("name", "Origin")) %>%
+  mutate(prop = total_alt/n)
+
+
+ggplot(mutation_load, aes(reorder_within(Origin, total_alt, snp_class), 
+                          total_alt, fill = Origin)) +
+  geom_half_point(side = "l", shape = 21, alpha = 0.5, stroke = 0.1, size =4,
+                  transformation_params = list(height = 0, width = 1.3, seed = 1)) +
+  geom_half_boxplot(side = "r", outlier.color = NA,
+                    width = 0.6, lwd = 0.3, color = "black",
+                    alpha = 0.8) +
+  theme_emily() +
+  scale_x_reordered() +
+  facet_wrap(~ snp_class, scales = "free") +
+  theme(legend.position="none") +
+  xlab("Population") + ylab("Total number of alternative alleles") +
   scale_fill_manual(values = col_palette, name = "Population")
 
 #~~~~~~~~~~~~~~~~~~~~#
@@ -215,7 +269,7 @@ hom_load_fig <- ggplot(filter(hom_load, snp_class == "LoF" |
   scale_fill_manual(values = col_palette, name = "Population") +
   theme_emily() +
   theme(#axis.title.x = element_blank(),
-    #axis.text.x = element_blank(),
+    axis.text.x = element_blank(),
     axis.line.y = element_blank(),
     strip.text = element_blank(),
     legend.position = "none",
@@ -224,7 +278,7 @@ hom_load_fig <- ggplot(filter(hom_load, snp_class == "LoF" |
   facet_wrap(~ factor(snp_class, levels = c("Missense", "LoF")), scales = "free") +
   #coord_flip() +
   #ggtitle("Number of homozygote genotypes in each SNP class") +
-  xlab("") + ylab("Number of \n alternative homozygotes")
+  xlab("") + ylab("Number of \n derived homozygotes")
 
 hom_load_fig
 
@@ -262,11 +316,42 @@ het_load_fig <- ggplot(filter(het_load, snp_class == "LoF" | snp_class == "Misse
 het_load_fig
 
 
-het_load_fig + hom_load_fig + plot_layout(guides = "collect", nrow = 2,
-                                                      heights = c(1.6,1.6))
+total_load_fig <- ggplot(filter(mutation_load, snp_class == "LoF" | snp_class == "Missense"), 
+                         aes(reorder_within(manage, -total_alt, snp_class),
+                             total_alt)) +
+  geom_half_point(side = "l", shape = 21, alpha = 0.5, stroke = 0.1, size = 4,
+                  transformation_params = list(height = 0, width = 1.3, seed = 1),
+                  aes(fill = Origin)) +
+  geom_half_boxplot(side = "r", outlier.color = NA,
+                    width = 0.6, lwd = 0.3, color = "black",
+                    alpha = 0.8, aes(fill = Origin)) +
+  theme(legend.position="bottom") +
+  geom_half_boxplot(side = "r", outlier.color = NA,
+                    width = 0.6, lwd = 0.3, color = "black",
+                    alpha = 0.8, aes(fill2 = Origin)) %>% rename_geom_aes(new_aes = c(fill = "fill2")) +
+  guides(fill = guide_legend(order = 1)) +
+  scale_fill_manual(aesthetics = "fill", values = cut.values,
+                    breaks = loc_levs[1:3], name = "Managed:") +
+  scale_fill_manual(aesthetics = "fill2", values = cut.values,
+                    breaks = loc_levs[-(1:3)], name = "Unmanaged:") +
+  theme_emily() +
+  theme(strip.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.line.y = element_blank(),
+        legend.position = "none",
+        axis.title.y = element_text(margin = margin(r = -2))) +
+  scale_x_reordered() +
+  facet_wrap(~ factor(snp_class, levels = c("Missense", "LoF", "Intergenic")), scales = "free") +
+  xlab("Population") + ylab("Number of \n derived alleles")
 
-ggsave("figs/load_USA_split.png", het_load_fig + hom_load_fig + 
-         plot_layout(guides = "collect", nrow = 2,
-                     heights = c(1.6,1.6)),
-       height = 8, width = 7)
+total_load_fig
+
+het_load_fig + hom_load_fig + total_load_fig + plot_layout(guides = "collect", nrow = 3,
+                                          heights = c(1.6,1.6,1.6))
+
+
+ggsave("figs/load_USA_split.png", het_load_fig + hom_load_fig + total_load_fig +
+         plot_layout(guides = "collect", nrow = 3,
+                     heights = c(1.6,1.6,1.6)),
+       height = 10, width = 7)
 

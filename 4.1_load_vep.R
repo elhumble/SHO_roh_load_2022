@@ -1,6 +1,6 @@
 # Genetic load plotting and analysis (VEP)
 
-source("scripts/theme_emily.R")
+source("theme_emily.R")
 library(dplyr)
 library(data.table)
 library(readxl)
@@ -19,8 +19,8 @@ library(performance)
 library(sjPlot)
 library(relayer)
 
-# scp ehumble@eddie.ecdf.ed.ac.uk:/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/6_load/DS_NS/snpeff/*traw data/out/6_load/DS_NS/snpeff/
-
+#scp ehumble@eddie.ecdf.ed.ac.uk:/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/6_load/DS_NS/vep/*traw data/out/6_load/DS_NS/vep/
+  
 #~~ metadata
 
 meta <- fread("data/meta/SHO_WGS_IDs_metadata_clean.csv") %>%
@@ -45,13 +45,13 @@ files <- dir(data_path, pattern = "*\\.traw")
 
 # Number of 0,1,2 genotypes per individual across SNP classes
 
-df <- tibble(filename = files) %>%
+df <- tibble(filename = files[2:5]) %>%
   mutate(file_contents = map(filename,
                              ~ fread(file.path(data_path, .)))) %>%
   unnest(cols = c(file_contents)) %>%
   select(-c(CHR, `(C)M`, POS, COUNTED, ALT)) %>%
   pivot_longer(cols = -c(filename, SNP)) %>%
-  mutate(name = gsub("_.+", "", name)) %>%
+  mutate(name = gsub("0_", "", name)) %>%
   left_join(meta, by = c("name" = "Sample_ID")) %>%
   dplyr::count(name, filename, WGS_run, Origin, manage, value) %>% # count unique values of one or more vars
   group_by(name, filename) %>%
@@ -91,7 +91,7 @@ roh <- roh_all %>%
 
 hom_load <- df %>%
   group_by(filename, name, WGS_run, Origin, manage) %>%
-  mutate(total_alt_hom = case_when(value == 2 ~ n, 
+  mutate(total_alt_hom = case_when(value == 0 ~ n, 
                                    TRUE ~ 0)) %>%
   summarise(total_geno = sum(n),
             total_alt_hom = sum(total_alt_hom)) %>%
@@ -232,6 +232,7 @@ ggplot(het_load, aes(reorder_within(Origin, total_het, snp_class),
   xlab("Population") + ylab("Number of heterozygotes") +
   scale_fill_manual(values = col_palette, name = "Population")
 
+
 #~~ Models
 
 fit_lof_mask <- lm(total_het ~ manage, data = het_load %>% filter(snp_class == "LoF"))
@@ -268,12 +269,16 @@ froh_het_load
 #     Mutation load : Number of alternative deleterious alleles      #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
+genotyped <- df %>%
+  group_by(name, Origin) %>%
+  summarise(n = sum(n))
+
 mutation_load <- df %>%
   # filter(!grepl("intergenic", filename)) %>%
   group_by(filename, name, WGS_run, Origin, manage) %>%
-  mutate(total_alt = case_when(value == 1 ~ n,
-                               value == 2 ~ n,
-                               TRUE ~ 0)) %>%
+  mutate(total_alt = case_when(value == 0 ~ n*2,
+                               value == 1 ~ n,
+                               value == 2 ~ 0)) %>%
   summarise(total_alt = sum(total_alt)) %>%
   mutate(snp_class = str_split(filename, "_")) %>% 
   unnest(cols = snp_class) %>% 
@@ -287,7 +292,9 @@ mutation_load <- df %>%
                                snp_class == "synonymous" ~ "Synonymous",
                                snp_class == "intergenic" ~ "Intergenic")) %>%
   mutate(Origin = factor(Origin, levels = c("EEP", "USA", "EAD A", "EAD B"))) %>%
-  mutate(snp_class = factor(snp_class, levels = c("LoF", "Missense", "Synonymous", "Intergenic")))
+  mutate(snp_class = factor(snp_class, levels = c("LoF", "Missense", "Synonymous", "Intergenic"))) %>%
+  left_join(genotyped, by = c("name", "Origin")) %>%
+  mutate(prop = total_alt/n)
 
 
 ggplot(mutation_load, aes(reorder_within(Origin, total_alt, snp_class), 
@@ -301,9 +308,25 @@ ggplot(mutation_load, aes(reorder_within(Origin, total_alt, snp_class),
   scale_x_reordered() +
   facet_wrap(~ snp_class, scales = "free") +
   theme(legend.position="none") +
-  xlab("Population") + ylab("Number of alternative alleles") +
+  xlab("Population") + ylab("Total number of alternative alleles") +
   scale_fill_manual(values = col_palette, name = "Population")
 
+
+#~~ Correlation with inbreeding
+
+froh_mutation_load <- mutation_load %>%
+  left_join(roh, by = c("name" = "iid")) %>%
+  filter(snp_class != "Intergenic" & snp_class != "Synonymous") %>%
+  ggplot(aes(froh, total_alt, col = Origin)) +
+  geom_point(size = 2, alpha = 0.7) +
+  theme_emily() +
+  theme(strip.text = element_text(face = "plain")) +
+  facet_wrap(~ factor(snp_class, levels = c("Missense", "LoF")), scales = "free") + 
+  geom_smooth(method = "lm", se = F) + 
+  scale_color_manual(values = col_palette, name = "Population") +
+  ylab("Number of heterozygotes") + xlab(expression(italic(F["ROH"])))
+
+froh_mutation_load
 
 #~~~~~~~~~~~~~#
 #     Rxy     #
@@ -314,24 +337,42 @@ files <- dir(data_path, pattern = "*\\.traw")
 
 # intergenic variants for standardising
 
-rxy_intergenic <- tibble(filename = files[1]) %>%
+rxy_intergenic_total <- tibble(filename = files[2]) %>%
   mutate(file_contents = map(filename,
                              ~ fread(file.path(data_path, .)))) %>%
   unnest(cols = c(file_contents)) %>%
   select(-c(CHR, `(C)M`, POS, COUNTED, ALT)) %>%
   pivot_longer(cols = -c(filename, SNP)) %>%
-  mutate(name = gsub("_.+", "", name)) %>%
+  mutate(name = gsub("0_", "", name)) %>%
   left_join(meta, by = c("name" = "Sample_ID")) %>%
   # right_join(ids) %>%
   group_by(SNP, manage) %>%
   mutate(value = as.numeric(value)) %>%
   filter(!is.na(value)) %>%
-  summarise(total_alleles = n()*2,
-            total_alt_alleles = sum(value, na.rm = T),
-            freq_intergenic = total_alt_alleles / total_alleles) %>%
+  summarise(total_alleles = n()*2)
+
+rxy_intergenic_total_alt <- tibble(filename = files[2]) %>%
+  mutate(file_contents = map(filename,
+                             ~ fread(file.path(data_path, .)))) %>%
+  unnest(cols = c(file_contents)) %>%
+  select(-c(CHR, `(C)M`, POS, COUNTED, ALT)) %>%
+  pivot_longer(cols = -c(filename, SNP)) %>%
+  mutate(name = gsub("0_", "", name)) %>%
+  left_join(meta, by = c("name" = "Sample_ID")) %>%
+  # right_join(ids) %>%
+  group_by(SNP, manage) %>%
+  mutate(value = as.numeric(value)) %>%
+  filter(!is.na(value)) %>%
+  mutate(total_alt = case_when(value == 0 ~ value*2,
+                               value == 1 ~ value,
+                               value == 2 ~ 0)) %>%
+  summarise(total_alt = sum(total_alt))
+
+rxy_intergenic <- left_join(rxy_intergenic_total, rxy_intergenic_total_alt, by = c("SNP", "manage")) %>%
+  mutate(freq = total_alt / total_alleles) %>%
   ungroup() %>%
-  select(SNP, manage, freq_intergenic) %>%
-  pivot_wider(names_from = manage, values_from = freq_intergenic)
+  select(SNP, manage, freq) %>%
+  pivot_wider(names_from = manage, values_from = freq)
 
 
 rxy_intergenic_ab <- rxy_intergenic %>%
@@ -348,24 +389,43 @@ rxy_intergenic_ba <- rxy_intergenic %>%
 
 # LoF variants
 
-rxy_lof <- tibble(filename = files[2]) %>%
+rxy_lof_total <- tibble(filename = files[3]) %>%
   mutate(file_contents = map(filename,
                              ~ fread(file.path(data_path, .)))) %>%
   unnest(cols = c(file_contents)) %>%
   select(-c(CHR, `(C)M`, POS, COUNTED, ALT)) %>%
   pivot_longer(cols = -c(filename, SNP)) %>%
-  mutate(name = gsub("_.+", "", name)) %>%
+  mutate(name = gsub("0_", "", name)) %>%
   left_join(meta, by = c("name" = "Sample_ID")) %>%
   # right_join(ids) %>%
   group_by(SNP, manage) %>%
   mutate(value = as.numeric(value)) %>%
   filter(!is.na(value)) %>%
-  summarise(total_alleles = n()*2,
-            total_alt_alleles = sum(value, na.rm = T),
-            freq = total_alt_alleles / total_alleles) %>%
+  summarise(total_alleles = n()*2)
+
+rxy_lof_total_alt <- tibble(filename = files[3]) %>%
+  mutate(file_contents = map(filename,
+                             ~ fread(file.path(data_path, .)))) %>%
+  unnest(cols = c(file_contents)) %>%
+  select(-c(CHR, `(C)M`, POS, COUNTED, ALT)) %>%
+  pivot_longer(cols = -c(filename, SNP)) %>%
+  mutate(name = gsub("0_", "", name)) %>%
+  left_join(meta, by = c("name" = "Sample_ID")) %>%
+  # right_join(ids) %>%
+  group_by(SNP, manage) %>%
+  mutate(value = as.numeric(value)) %>%
+  filter(!is.na(value)) %>%
+  mutate(total_alt = case_when(value == 0 ~ value*2,
+                               value == 1 ~ value,
+                               value == 2 ~ 0)) %>%
+  summarise(total_alt = sum(total_alt))
+
+rxy_lof <- left_join(rxy_lof_total, rxy_lof_total_alt, by = c("SNP", "manage")) %>%
+  mutate(freq = total_alt / total_alleles) %>%
   ungroup() %>%
   select(SNP, manage, freq) %>%
   pivot_wider(names_from = manage, values_from = freq)
+
 
 rxy_lof_ab <- rxy_lof %>%
   mutate(manage_unmanage = Managed * (1 - Unmanaged),
@@ -377,21 +437,41 @@ rxy_lof_ba <- rxy_lof %>%
          manage_unmanage = Managed * (1 - Unmanaged)) %>%
   select(-c(SNP, Managed, Unmanaged))
 
+# Missense variants
 
-rxy_missense <- tibble(filename = files[3]) %>%
+rxy_missense_total <- tibble(filename = files[4]) %>%
   mutate(file_contents = map(filename,
                              ~ fread(file.path(data_path, .)))) %>%
   unnest(cols = c(file_contents)) %>%
   select(-c(CHR, `(C)M`, POS, COUNTED, ALT)) %>%
   pivot_longer(cols = -c(filename, SNP)) %>%
-  mutate(name = gsub("_.+", "", name)) %>%
+  mutate(name = gsub("0_", "", name)) %>%
   left_join(meta, by = c("name" = "Sample_ID")) %>%
+  # right_join(ids) %>%
   group_by(SNP, manage) %>%
   mutate(value = as.numeric(value)) %>%
   filter(!is.na(value)) %>%
-  summarise(total_alleles = n()*2,
-            total_alt_alleles = sum(value, na.rm = T),
-            freq = total_alt_alleles / total_alleles) %>%
+  summarise(total_alleles = n()*2)
+
+rxy_missense_total_alt <- tibble(filename = files[4]) %>%
+  mutate(file_contents = map(filename,
+                             ~ fread(file.path(data_path, .)))) %>%
+  unnest(cols = c(file_contents)) %>%
+  select(-c(CHR, `(C)M`, POS, COUNTED, ALT)) %>%
+  pivot_longer(cols = -c(filename, SNP)) %>%
+  mutate(name = gsub("0_", "", name)) %>%
+  left_join(meta, by = c("name" = "Sample_ID")) %>%
+  # right_join(ids) %>%
+  group_by(SNP, manage) %>%
+  mutate(value = as.numeric(value)) %>%
+  filter(!is.na(value)) %>%
+  mutate(total_alt = case_when(value == 0 ~ value*2,
+                               value == 1 ~ value,
+                               value == 2 ~ 0)) %>%
+  summarise(total_alt = sum(total_alt))
+
+rxy_missense <- left_join(rxy_missense_total, rxy_missense_total_alt, by = c("SNP", "manage")) %>%
+  mutate(freq = total_alt / total_alleles) %>%
   ungroup() %>%
   select(SNP, manage, freq) %>%
   pivot_wider(names_from = manage, values_from = freq)
@@ -439,9 +519,9 @@ rxy_missense <- as.matrix(lab_missense / lba_missense) %>%
 
 subsample <- function(iter, frac) {
   
-  snps_lof <- sample(1:nrow(rxy_lof_ab_mat), round(frac * nrow(rxy_lof_ab_mat), 0), replace=FALSE)
-  snps_intergenic <- sample(1:nrow(rxy_intergenic_ab_mat), round(frac * nrow(rxy_intergenic_ab_mat), 0), replace=FALSE)
-  snps_missense <- sample(1:nrow(rxy_missense_ab_mat), round(frac * nrow(rxy_missense_ab_mat), 0), replace=FALSE)           
+  snps_lof <- sample(1:nrow(rxy_lof_ab_mat), round(frac * nrow(rxy_lof_ab_mat), 0), replace=TRUE)
+  snps_intergenic <- sample(1:nrow(rxy_intergenic_ab_mat), round(frac * nrow(rxy_intergenic_ab_mat), 0), replace=TRUE)
+  snps_missense <- sample(1:nrow(rxy_missense_ab_mat), round(frac * nrow(rxy_missense_ab_mat), 0), replace=TRUE)           
   
   # don't subsample intergenic snps [snps_intergenic, ]
   lab_lof_sub <- colSums(rxy_lof_ab_mat[snps_lof, ]) / colSums(rxy_intergenic_ab_mat)
@@ -462,7 +542,7 @@ subsample <- function(iter, frac) {
   
 }
 
-rxy_samples <- map(1:100, subsample, 0.7)
+rxy_samples <- map(1:100, subsample, 1)
 
 
 #~~ Plot
@@ -505,7 +585,7 @@ rxy <- filter(rxy_df, comparison == "unmanage_manage") %>%
         plot.title = element_text(size = 12)) +
   # scale_color_manual(values = c("grey80", "black")) +
   scale_color_manual(values = c("black", "black")) +
-  xlim(0.85, 1.15) + ylab("") +
+  xlim(0.80, 1.2) + ylab("") +
   ggtitle("Unmanaged versus managed")
 
 rxy
@@ -533,7 +613,7 @@ hom_load_fig <- ggplot(filter(hom_load, snp_class == "LoF" |
   scale_fill_manual(values = col_palette, name = "Population") +
   theme_emily() +
   theme(#axis.title.x = element_blank(),
-    #axis.text.x = element_blank(),
+    axis.text.x = element_blank(),
     axis.line.y = element_blank(),
     strip.text = element_blank(),
     legend.position = "none",
@@ -542,7 +622,7 @@ hom_load_fig <- ggplot(filter(hom_load, snp_class == "LoF" |
   facet_wrap(~ factor(snp_class, levels = c("Missense", "LoF")), scales = "free") +
   #coord_flip() +
   #ggtitle("Number of homozygote genotypes in each SNP class") +
-  xlab("") + ylab("Number of \n alternative homozygotes")
+  xlab("") + ylab("Number of \n derived homozygotes")
 
 hom_load_fig
 
@@ -581,14 +661,44 @@ het_load_fig <- ggplot(filter(het_load, snp_class == "LoF" | snp_class == "Misse
 het_load_fig
 
 
+total_load_fig <- ggplot(filter(mutation_load, snp_class == "LoF" | snp_class == "Missense"), 
+                         aes(reorder_within(manage, -total_alt, snp_class),
+                             total_alt)) +
+  geom_half_point(side = "l", shape = 21, alpha = 0.5, stroke = 0.1, size = 4,
+                  transformation_params = list(height = 0, width = 1.3, seed = 1),
+                  aes(fill = Origin)) +
+  geom_half_boxplot(side = "r", outlier.color = NA,
+                    width = 0.6, lwd = 0.3, color = "black",
+                    alpha = 0.8, aes(fill = Origin)) +
+  theme(legend.position="bottom") +
+  geom_half_boxplot(side = "r", outlier.color = NA,
+                    width = 0.6, lwd = 0.3, color = "black",
+                    alpha = 0.8, aes(fill2 = Origin)) %>% rename_geom_aes(new_aes = c(fill = "fill2")) +
+  guides(fill = guide_legend(order = 1)) +
+  scale_fill_manual(aesthetics = "fill", values = cut.values,
+                    breaks = loc_levs[1:2], name = "Managed:") +
+  scale_fill_manual(aesthetics = "fill2", values = cut.values,
+                    breaks = loc_levs[-(1:2)], name = "Unmanaged:") +
+  theme_emily() +
+  theme(strip.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.line.y = element_blank(),
+        axis.title.y = element_text(margin = margin(r = -2))) +
+  scale_x_reordered() +
+  facet_wrap(~ factor(snp_class, levels = c("Missense", "LoF", "Intergenic")), scales = "free") +
+  xlab("Population") + ylab("Number of \n derived alleles")
+
+total_load_fig
+
+
 rxy_fig <- rxy + plot_spacer() + plot_layout(widths = c(1.6,1))
 
-het_load_fig + hom_load_fig + rxy_fig + plot_layout(guides = "collect", nrow = 3,
-                                                    heights = c(1.6,1.6, 0.8))
+het_load_fig + hom_load_fig + total_load_fig + rxy_fig + plot_layout(guides = "collect", nrow = 4,
+                                                    heights = c(1.6,1.6,1.6, 0.8))
 
-ggsave("figs/load_VEP.png", het_load_fig + hom_load_fig + rxy_fig + 
-         plot_layout(guides = "collect", nrow = 3,
-                     heights = c(1.6,1.6, 1)),
-       height = 8, width = 7)
+ggsave("figs/load_VEP.png", 
+       het_load_fig + hom_load_fig + total_load_fig + rxy_fig + plot_layout(guides = "collect", nrow = 4,
+                                                                            heights = c(1.6,1.6,1.6, 1)),
+       height = 10, width = 7)
 
 
