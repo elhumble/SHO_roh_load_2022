@@ -13,13 +13,15 @@ library(lme4)
 library(broom.mixed)
 library(performance)
 library(sjPlot)
-source("scripts/theme_emily.R")
+source("theme_emily.R")
 options(scipen=999)
 #install.packages("remotes")
 #remotes::install_github("clauswilke/relayer")
 library(relayer)
 library(ggnewscale)
-
+library(grDevices)
+library(extrafont)
+windowsFont(Arial=windowsFont("Arial"))
 
 
 # scp ehumble@eddie.ecdf.ed.ac.uk:/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/4_IBD_IBC/DS_NS/ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.hom data/out/4_ibd_ibc/DS_NS/ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.hom
@@ -758,3 +760,12 @@ aa / bb + plot_layout(guides = "collect") + plot_annotation(tag_levels = "A")
 ggsave("figs/Figure_1.png", aa / bb + plot_layout(guides = "collect") + 
          plot_annotation(tag_levels = "A"), height = 6, width = 9)
 
+
+ggsave("figs/Figure_1.pdf", aa / bb + plot_layout(guides = "collect") + 
+         plot_annotation(tag_levels = "A"), height = 6, width = 9,
+       dev= cairo_pdf, dpi = 600)
+
+ggsave("figs/Figure_2.pdf", het_load_fig + hom_load_fig + total_load_fig + 
+         plot_layout(guides = "collect", nrow = 3,
+                     heights = c(1.6,1.6,1.6)),
+       height = 8, width = 7, dev= cairo_pdf, dpi = 600)

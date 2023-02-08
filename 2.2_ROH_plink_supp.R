@@ -13,7 +13,7 @@ library(lme4)
 library(broom.mixed)
 library(performance)
 library(sjPlot)
-source("scripts/theme_emily.R")
+source("theme_emily.R")
 options(scipen=999)
 #install.packages("remotes")
 #remotes::install_github("clauswilke/relayer")
@@ -230,9 +230,9 @@ ne_plot <-  df %>%
   geom_pointrange(aes(ymax = upper, ymin = lower), size = 0.4,
                   position = position_dodge(width = 0.5)) +
   theme_emily() +
-  #theme(legend.position = "none") +
+  theme(legend.position = "none") +
   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-  scale_y_log10() + xlab("Generations back in time") +
+  scale_y_log10(breaks = c(100,300,1000,3000)) + xlab("Generations back in time") +
   ylab(expression(italic(N[e])))
 
 

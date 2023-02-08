@@ -20,6 +20,8 @@ library(sjPlot)
 #devtools::install_github("clauswilke/relayer")
 #remotes::install_github("clauswilke/relayer")
 library(relayer)
+library(extrafont)
+windowsFont(Arial=windowsFont("Arial"))
 
 # scp ehumble@eddie.ecdf.ed.ac.uk:/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/6_load/DS_NS/snpeff/*traw data/out/6_load/DS_NS/snpeff/
 
@@ -706,7 +708,7 @@ total_load_fig
 rxy_fig <- rxy + plot_spacer() + plot_layout(widths = c(1.6,1))
 
 #het_load_fig + hom_load_fig + rxy_fig + plot_layout(guides = "collect", nrow = 3,
-                                                heights = c(1.6,1.6, 0.8))
+#                                                heights = c(1.6,1.6, 0.8))
 
 # ggsave("figs/Figure_2.png", het_load_fig + hom_load_fig + rxy_fig + 
 #          plot_layout(guides = "collect", nrow = 3,
@@ -714,16 +716,18 @@ rxy_fig <- rxy + plot_spacer() + plot_layout(widths = c(1.6,1))
 #        height = 8, width = 7)
 
 het_load_fig + hom_load_fig + total_load_fig + plot_layout(guides = "collect", nrow = 3,
-                                                    heights = c(1.6,1.6, 0.8))
+                                                    heights = c(1.6,1.6,1.6))
 
-ggsave("figs/Figure_2.png", het_load_fig + hom_load_fig + total_load_fig + 
+ggsave("figs/Figure_2.pdf", het_load_fig + hom_load_fig + total_load_fig + 
          plot_layout(guides = "collect", nrow = 3,
-                     heights = c(1.6,1.6, 1.6)),
-       height = 8, width = 7)
+                     heights = c(1.6,1.6,1.6)),
+       height = 8, width = 7, dev= cairo_pdf, dpi = 600)
+
 
 # Rxy plot
 
 ggsave("figs/Rxy_SNPeff.png", rxy_fig, height = 3, width = 6)
+
 
 # Total load derived neutral alleles
 
@@ -758,4 +762,39 @@ derived_neutral
 ggsave("figs/derived_alleles.png", derived_neutral,
        height = 4, width = 5)
   
+
+# Total load plot
+
+total_load_fig <- ggplot(filter(mutation_load, snp_class == "LoF" | snp_class == "Missense"), 
+                         aes(reorder_within(manage, total_alt, snp_class),
+                             total_alt)) +
+  geom_half_point(side = "l", shape = 21, alpha = 0.5, stroke = 0.1, size = 4,
+                  transformation_params = list(height = 0, width = 1.3, seed = 1),
+                  aes(fill = Origin)) +
+  geom_half_boxplot(side = "r", outlier.color = NA,
+                    width = 0.6, lwd = 0.3, color = "black",
+                    alpha = 0.8, aes(fill = Origin)) +
+  theme(legend.position="bottom") +
+  geom_half_boxplot(side = "r", outlier.color = NA,
+                    width = 0.6, lwd = 0.3, color = "black",
+                    alpha = 0.8, aes(fill2 = Origin)) %>% rename_geom_aes(new_aes = c(fill = "fill2")) +
+  guides(fill = guide_legend(order = 1)) +
+  scale_fill_manual(aesthetics = "fill", values = cut.values,
+                    breaks = loc_levs[1:2], name = "Managed:") +
+  scale_fill_manual(aesthetics = "fill2", values = cut.values,
+                    breaks = loc_levs[-(1:2)], name = "Unmanaged:") +
+  theme_emily() +
+  theme(strip.text = element_text(face = "plain"),
+        axis.title.x = element_blank(),
+        axis.line.y = element_blank(),
+        axis.title.y = element_text(margin = margin(r = -2))) +
+  scale_x_reordered() +
+  facet_wrap(~ factor(snp_class, levels = c("Missense", "LoF")), scales = "free") +
+  xlab("Population") + ylab("Number of \n derived alleles")
+
+total_load_fig
+
+ggsave("figs/mutation_load.png", total_load_fig,
+       height = 4, width = 8)
+
 

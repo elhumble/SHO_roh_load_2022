@@ -317,7 +317,7 @@ het_load_fig
 
 
 total_load_fig <- ggplot(filter(mutation_load, snp_class == "LoF" | snp_class == "Missense"), 
-                         aes(reorder_within(manage, -total_alt, snp_class),
+                         aes(reorder_within(manage, total_alt, snp_class),
                              total_alt)) +
   geom_half_point(side = "l", shape = 21, alpha = 0.5, stroke = 0.1, size = 4,
                   transformation_params = list(height = 0, width = 1.3, seed = 1),
