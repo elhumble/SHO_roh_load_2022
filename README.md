@@ -2,6 +2,13 @@
 -------------
 Humble E, Stoffel MA, Dicks K, Ball AD, Gooley RM, Chuven J, Pusey R, Al Remeithi M, Koepfli KP, Pukazhenthi B, Senn H, Ogden R (2023) **Conservation management strategy impacts inbreeding and mutation load in scimitar-horned oryx.**  *PNAS*. **120**, 18. https://doi.org/10.1073/pnas.2210756120.  
 
+**Summary**
+-------------
+
+This repository contains the scripts required for downstream analysis of called genotypes including analysis of ROH analysis, deleterious mutations and recent demography. These scripts include the code to generate the figures in the final paper.
+
+For prior steps including alignment, SNP calling and annotation, please see github repository [SHO_reseq_2022](https://github.com/elhumble/SHO_reseq_2022).
+
 **Code structure**
 -------------
 
