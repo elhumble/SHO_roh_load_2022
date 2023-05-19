@@ -2,7 +2,7 @@ library(data.table)
 library(dplyr)
 library(ggplot2)
 library(wesanderson)
-source("scripts/theme_emily.R")
+source("theme_emily.R")
 
 # Contemporary Ne using Gone
 
@@ -30,7 +30,10 @@ gone_ne_EEP <- fread("data/out/8_gone/outfileLD_Ne_estimates_EEP" )%>%
 gone_ne_USA <- fread("data/out/8_gone/outfileLD_Ne_estimates_USA" )%>%
   mutate(Origin = "USA")
 
-gone_ne <- rbind(gone_ne_EAD_A, gone_ne_EAD_B, gone_ne_EEP, gone_ne_USA)
+gone_ne <- rbind(gone_ne_EAD_A, gone_ne_EAD_B, gone_ne_EEP, gone_ne_USA) %>%
+  mutate(Origin = case_when(Origin == "EAD_A" ~ "EAD A",
+                             Origin == "EAD_B" ~ "EAD B",
+                             TRUE ~ Origin))
 
 
 gone_ne_plot <-ggplot(gone_ne, aes(Generation, Geometric_mean, col = Origin)) +

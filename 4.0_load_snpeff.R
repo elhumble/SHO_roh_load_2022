@@ -21,7 +21,9 @@ library(sjPlot)
 #remotes::install_github("clauswilke/relayer")
 library(relayer)
 library(extrafont)
-windowsFont(Arial=windowsFont("Arial"))
+library(grDevices)
+#loadfonts()
+windowsFont(Arial = windowsFont("Arial"))
 
 # scp ehumble@eddie.ecdf.ed.ac.uk:/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/6_load/DS_NS/snpeff/*traw data/out/6_load/DS_NS/snpeff/
 
@@ -624,7 +626,7 @@ hom_load_fig <- ggplot(filter(hom_load, snp_class == "LoF" |
                   transformation_params = list(height = 0, width = 1.3, seed = 1)) +
   geom_half_boxplot(side = "r", outlier.color = NA,
                     width = 0.6, lwd = 0.3, color = "black",
-                    alpha = 0.8) +
+                    alpha = 1) +
   scale_fill_manual(values = col_palette, name = "Population") +
   theme_emily() +
   theme(axis.line.y = element_blank(),

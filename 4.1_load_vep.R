@@ -609,7 +609,7 @@ hom_load_fig <- ggplot(filter(hom_load, snp_class == "LoF" |
                   transformation_params = list(height = 0, width = 1.3, seed = 1)) +
   geom_half_boxplot(side = "r", outlier.color = NA,
                     width = 0.6, lwd = 0.3, color = "black",
-                    alpha = 0.8) +
+                    alpha = 1) +
   scale_fill_manual(values = col_palette, name = "Population") +
   theme_emily() +
   theme(#axis.title.x = element_blank(),

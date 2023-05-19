@@ -66,6 +66,10 @@ froh <- roh_lengths %>%
   mutate(percent_genome = (KBSUM/auto_length) * 100) %>%
   mutate(FROH = KBSUM/auto_length)
 
+froh %>%
+  group_by(manage) %>%
+  summarise(mean = mean(FROH))
+
 #~~ Froh plot
 
 col_palette <- c(wes_palette("Cavalcanti1")[2],
@@ -265,7 +269,7 @@ froh_dist <- ggplot(froh, aes(FROH)) +
                  bins = 15) +
   theme_emily() +
   ylab("Individuals") + xlab(expression(italic(F["ROH"]))) +
-  geom_vline(aes(xintercept=median(froh$FROH)),
+  geom_vline(aes(xintercept=mean(froh$FROH)),
              lty = "dashed", col = "grey40",
              size = 0.7)
 
